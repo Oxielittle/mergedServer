@@ -130,7 +130,7 @@ test("sendEmailNotification falls back to SMTP when Resend is not configured", a
     assert.equal(transportConfig.host, "smtp.example.com");
     assert.equal(transportConfig.port, 2525);
     assert.equal(transportConfig.secure, true);
-    assert.equal(sentMail.from, "SAGIP BAYAN <alerts@example.com>");
+    assert.equal(sentMail.from, "SAGIP BAYAN <smtp-user>");
     assert.equal(sentMail.to, "user@example.com");
     assert.equal(sentMail.subject, "SMTP Subject");
     assert.equal(sentMail.text, "SMTP body");

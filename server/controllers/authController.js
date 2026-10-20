@@ -288,26 +288,32 @@ function buildUpdateSummary({
 /* INIT ADMIN */
 const initAdmin = async (req, res) => {
   try {
-
     const admin = await User.findOne({ role: 'admin' });
+    if (admin) {
+      return res.status(409).json({ message: 'An administrator account already exists.' });
+    }
 
-    if (!admin) {
+    const username = sanitizeUsername(process.env.ADMIN_BOOTSTRAP_USERNAME);
+    const email = sanitizeEmail(process.env.ADMIN_BOOTSTRAP_EMAIL);
+    const password = sanitizePassword(process.env.ADMIN_BOOTSTRAP_PASSWORD);
 
-      const hashed = await bcrypt.hash('admin123', 10);
+    if (!username || !isValidEmail(email) || !password) {
+      return res.status(503).json({ message: 'Administrator bootstrap credentials are not configured.' });
+    }
 
-      await User.create({
-        username: 'admin',
-        email: 'admin@drrmo.gov.ph',
+    const hashed = await bcrypt.hash(password, 10);
+
+    await User.create({
+        username,
+        email,
         password: hashed,
         role: 'admin',
         verified: true,
-        phoneNumber: '0000000000',
-        address: 'DRRMO Main Office'
-      });
+        phoneNumber: sanitizePhoneNumber(process.env.ADMIN_BOOTSTRAP_PHONE || ''),
+        address: sanitizeAddress(process.env.ADMIN_BOOTSTRAP_ADDRESS || 'DRRMO Main Office')
+    });
 
-    }
-
-    res.send('Admin ready');
+    return res.status(201).json({ message: 'Administrator account created.' });
 
   } catch (err) {
     res.status(500).json({ message: err.message });

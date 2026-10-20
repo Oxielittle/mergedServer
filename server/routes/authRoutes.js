@@ -1,9 +1,10 @@
 const express = require('express');
 const authController = require('../controllers/authController');
 const { requireAdmin, requireLogin } = require('../middleware/adminMiddleware');
+const { requireAdminBootstrap } = require('../middleware/bootstrapAccess');
 const router = express.Router();
 
-router.get('/init', authController.initAdmin);
+router.post('/init', requireAdminBootstrap, authController.initAdmin);
 router.post('/register', requireAdmin, authController.register);
 router.get('/approve-account/:token', authController.approveAccountRequest);
 router.get('/approve-account-update/:token', authController.approveAccountUpdateRequest);

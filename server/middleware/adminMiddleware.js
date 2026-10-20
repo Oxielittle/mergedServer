@@ -8,8 +8,6 @@ const requireLogin = (req, res, next) => {
 };
 
 const requireAdmin = (req, res, next) => {
-  console.log("SESSION IN requireAdmin:", req.session);
-
   if (!req.session || req.session.role !== "admin") {
     return res.status(403).json({ message: "Admin access required" });
   }
@@ -18,8 +16,6 @@ const requireAdmin = (req, res, next) => {
 };
 
 const requireDrrmo = (req, res, next) => {
-  console.log("SESSION IN requireDrrmo:", req.session);
-
   if (!req.session || req.session.role !== "drrmo") {
     return res.status(403).json({ message: "DRRMO access required" });
   }
@@ -28,8 +24,6 @@ const requireDrrmo = (req, res, next) => {
 };
 
 const requireAdminOrDrrmo = (req, res, next) => {
-  console.log("SESSION IN requireAdminOrDrrmo:", req.session);
-
   if (!req.session || !isPrivilegedStaffRole(req.session.role)) {
     return res
       .status(403)

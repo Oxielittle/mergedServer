@@ -47,6 +47,7 @@ const reliefTrackingRoutes = require("./routes/reliefTrackingRoutes");
 const auditRoutes = require("./routes/auditRoutes");
 const { exportAuditLogsPdf } = require("./controllers/auditController");
 const { requireLogin, requireAdmin } = require("./middleware/adminMiddleware");
+const { applySocketIdentity, canJoinUserRoom } = require("./utils/socketRoomAccess");
 const guidelineRoutes = require("./routes/GuidelineRoutes");
 const announcementRoutes = require("./routes/AnnouncementRoutes");
 const connectionRoutes = require("./routes/connectionRoutes");
@@ -200,6 +201,11 @@ app.use(
 // Session
 // --------------------
 const isProd = process.env.NODE_ENV === "production";
+const sessionSecret = process.env.SESSION_SECRET;
+
+if (isProd && !sessionSecret) {
+  throw new Error("SESSION_SECRET must be configured in production.");
+}
 
 const requestedSecureSessionCookie = parseBooleanEnv(
   process.env.SESSION_COOKIE_SECURE,
@@ -212,7 +218,7 @@ const useSecureSessionCookie = isProd ? requestedSecureSessionCookie : false;
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "supersecretkey",
+    secret: sessionSecret || "development-session-secret-only",
     resave: false,
     saveUninitialized: false,
     proxy: useSecureSessionCookie,
@@ -547,12 +553,23 @@ app.use((err, req, res, next) => {
 // --------------------
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: function (origin, callback) {
+      if (!origin || FRONTEND_URLS.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   },
 });
 
 app.set("io", io);
+
+io.use((socket, next) => {
+  applySocketIdentity(socket);
+  next();
+});
 
 io.on("connection", (socket) => {
   console.log("[socket] User connected:", socket.id);
@@ -560,7 +577,10 @@ io.on("connection", (socket) => {
   socket.on("joinRoom", (userId) => {
     const roomId = String(userId || "").trim();
 
-    if (!roomId) return;
+    if (!canJoinUserRoom(socket, roomId)) {
+      socket.emit("roomError", { message: "You can only join your own notification room." });
+      return;
+    }
 
     socket.join(roomId);
 

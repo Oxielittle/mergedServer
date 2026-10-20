@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 
 const YoloCommand = require("../models/YoloCommand");
+const { requireAdminOrDrrmo } = require("../middleware/adminMiddleware");
+const { requireYoloAgentToken } = require("../middleware/yoloAgentAccess");
 
 const CAMERA_ID = "cam_1";
 
@@ -21,7 +23,7 @@ async function getOrCreateCommand(cameraId = CAMERA_ID) {
 }
 
 // Admin/frontend calls this
-router.post("/start", async (req, res) => {
+router.post("/start", requireAdminOrDrrmo, async (req, res) => {
   try {
     const doc = await getOrCreateCommand();
 
@@ -45,7 +47,7 @@ router.post("/start", async (req, res) => {
 });
 
 // Admin/frontend calls this
-router.post("/stop", async (req, res) => {
+router.post("/stop", requireAdminOrDrrmo, async (req, res) => {
   try {
     const doc = await getOrCreateCommand();
 
@@ -93,7 +95,7 @@ router.get("/status", async (req, res) => {
 });
 
 // Laptop B yolo_agent.py calls this repeatedly
-router.get("/command/:cameraId", async (req, res) => {
+router.get("/command/:cameraId", requireYoloAgentToken, async (req, res) => {
   try {
     const cameraId = req.params.cameraId || CAMERA_ID;
     const doc = await getOrCreateCommand(cameraId);
@@ -117,7 +119,7 @@ router.get("/command/:cameraId", async (req, res) => {
 });
 
 // Laptop B yolo_agent.py calls this after it starts/stops YOLO
-router.post("/agent-report", async (req, res) => {
+router.post("/agent-report", requireYoloAgentToken, async (req, res) => {
   try {
     const {
       camera_id = CAMERA_ID,

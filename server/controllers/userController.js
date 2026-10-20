@@ -10,6 +10,7 @@ const sendEmailNotification = require("../utils/sendEmailNotification");
 const { sendUniSms } = require("../utils/sendUniSms");
 const cloudinary = require("../config/cloudinary");
 const bcrypt = require("bcryptjs");
+const { issueUserAuthToken } = require("../utils/userAuthToken");
 
 const GUIDELINE_NOTIFICATION_LOOKBACK_DAYS = 30;
 const ANNOUNCEMENT_NOTIFICATION_LOOKBACK_DAYS = 30;
@@ -1067,19 +1068,20 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid username or password" });
     }
 
+    let restored = false;
     if (user.isArchived) {
+      restored = true;
       user.isArchived = false;
       user.archivedAt = null;
       user.deleteAfter = null;
     }
 
     if (user.twoFactorEnabled) {
-      await user.save();
       return res.json({
         twoFactor: true,
         userId: user._id,
         email: user.email,
-        restored: true,
+        restored,
       });
     }
 
@@ -1087,8 +1089,9 @@ const loginUser = async (req, res) => {
 
     res.json({
       twoFactor: false,
-      user,
-      restored: true,
+      user: safeUserPayload(user),
+      token: issueUserAuthToken(user._id),
+      restored,
     });
   } catch (err) {
     console.error(err);
@@ -1508,6 +1511,14 @@ const verifyOtp = async (req, res) => {
         isPhoneVerified: user.isPhoneVerified === true,
         isEmailVerified: true,
         isVerified: true,
+        user: safeUserPayload(user),
+      };
+    } else if (purpose === "two_factor") {
+      clearOtpFields(user);
+      response = {
+        ...response,
+        message: "Sign-in verification successful.",
+        token: issueUserAuthToken(user._id),
         user: safeUserPayload(user),
       };
     } else if (isForgotPasswordPurpose(purpose)) {

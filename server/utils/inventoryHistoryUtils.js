@@ -264,6 +264,7 @@ module.exports = {
   INVENTORY_HISTORY_YEAR,
   INVENTORY_HISTORY_YEAR_START,
   INVENTORY_HISTORY_MAX_DATE,
+  INVENTORY_HISTORY_MAX_MONTH,
   buildInventoryHistoryMonths,
   normalizeInventoryHistoryDateInput,
   reconstructInventoryStateAsOf,

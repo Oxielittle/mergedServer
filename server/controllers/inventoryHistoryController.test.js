@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const Module = require("node:module");
 const {
   INVENTORY_HISTORY_MAX_DATE,
+  INVENTORY_HISTORY_MAX_MONTH,
   INVENTORY_HISTORY_YEAR_START,
 } = require("../utils/inventoryHistoryUtils");
 
@@ -250,10 +251,14 @@ test("returns reconstructed inventory history for the current live history windo
     assert.equal(jsonBody.items.goods.length, 1);
     assert.equal(jsonBody.items.monetary.length, 1);
     assert.equal(
-      jsonBody.months.find((month) => month.value === "2026-08").resolvedAsOfDate,
+      jsonBody.months.find((month) => month.value === INVENTORY_HISTORY_MAX_MONTH).resolvedAsOfDate,
       INVENTORY_HISTORY_MAX_DATE
     );
-    assert.equal(jsonBody.months.find((month) => month.value === "2026-09").disabled, true);
+    const nextMonth = Number(INVENTORY_HISTORY_MAX_MONTH.slice(5, 7)) + 1;
+    if (nextMonth <= 12) {
+      const nextMonthValue = `${INVENTORY_HISTORY_MAX_MONTH.slice(0, 4)}-${String(nextMonth).padStart(2, "0")}`;
+      assert.equal(jsonBody.months.find((month) => month.value === nextMonthValue).disabled, true);
+    }
   } finally {
     InventoryItem.find = originalInventoryItemFind;
     InventoryLog.find = originalInventoryLogFind;
