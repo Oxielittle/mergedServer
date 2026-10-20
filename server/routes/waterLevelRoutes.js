@@ -1,5 +1,6 @@
 import express from "express";
 import adminMiddleware from "../middleware/adminMiddleware.js";
+import waterLevelAccess from "../middleware/waterLevelAccess.js";
 
 import {
   createWaterLevel,
@@ -13,8 +14,9 @@ import {
 
 const router = express.Router();
 const { requireDrrmo } = adminMiddleware;
+const { requireDrrmoOrYoloAgent } = waterLevelAccess;
 
-router.post("/", requireDrrmo, createWaterLevel);
+router.post("/", requireDrrmoOrYoloAgent, createWaterLevel);
 
 router.get("/", getWaterLevels);
 router.get("/latest/:camera_id", getLatestWaterLevel);
