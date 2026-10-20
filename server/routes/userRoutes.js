@@ -17,7 +17,7 @@ const { requireAdmin } = require("../middleware/adminMiddleware");
    USER ROUTES
 ========================= */
 
-router.get("/users", userController.getUsers);
+router.get("/users", requireAdmin, userController.getUsers);
 router.post("/register", userController.registerUser);
 router.put("/update/:id", requireUserToken, requireSelf, userController.updateUser);
 router.post("/login", userController.loginUser);
@@ -48,7 +48,7 @@ router.get("/:id/notifications", requireUserToken, requireSelf, userController.g
 router.put("/:id/notifications/read-all", requireUserToken, requireSelf, userController.markNotificationsRead);
 router.delete("/:id/notifications", requireUserToken, requireSelf, userController.clearNotifications);
 
-router.get("/:id", userController.getUserById);
+router.get("/:id", requireUserToken, requireSelf, userController.getUserById);
 
 
 router.put(

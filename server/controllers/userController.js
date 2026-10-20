@@ -1030,13 +1030,16 @@ const verifyEmail = async (req, res) => {
 /* =========================
    USERS
 ========================= */
-const getUsers = (req, res) => {
-  UserModel.find()
-    .then((users) => res.json(users))
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json({ error: "Internal Server Error" });
-    });
+const getUsers = async (req, res) => {
+  try {
+    const users = await UserModel.find().select(
+      "-password -otp -otpExpires -phoneOtp -phoneOtpExpires -emailOtp -emailOtpExpires -otpCodeHash -otpPurpose -otpChannel -otpAttempts -lastOtpSentAt -verificationToken -verificationTokenExpires -passwordResetTokenHash -passwordResetTokenExpires"
+    );
+    return res.json(users.map(safeUserPayload));
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
 };
 
 /* =========================
@@ -1488,6 +1491,7 @@ const verifyOtp = async (req, res) => {
         isPhoneVerified: true,
         isEmailVerified: user.isEmailVerified === true,
         isVerified: true,
+        token: issueUserAuthToken(user._id),
         user: safeUserPayload(user),
       };
     } else if (purpose === "registration_email") {
@@ -1511,6 +1515,7 @@ const verifyOtp = async (req, res) => {
         isPhoneVerified: user.isPhoneVerified === true,
         isEmailVerified: true,
         isVerified: true,
+        token: issueUserAuthToken(user._id),
         user: safeUserPayload(user),
       };
     } else if (purpose === "two_factor") {

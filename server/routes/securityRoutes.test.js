@@ -73,6 +73,13 @@ test("user account mutations require the authenticated account", () => {
     const route = findRoute(registrations, "put", path);
     assert.ok(route.handlers.includes(requireAdmin), `PUT ${path} must require an admin.`);
   }
+
+  const usersRoute = findRoute(registrations, "get", "/users");
+  assert.ok(usersRoute.handlers.includes(requireAdmin), "GET /users must require an admin.");
+
+  const userByIdRoute = findRoute(registrations, "get", "/:id");
+  assert.ok(userByIdRoute.handlers.includes(requireUserToken), "GET /:id must require a user token.");
+  assert.ok(userByIdRoute.handlers.includes(requireSelf), "GET /:id must require the matching account.");
 });
 
 test("admin bootstrap, YOLO control, and YOLO agent routes have dedicated guards", () => {
