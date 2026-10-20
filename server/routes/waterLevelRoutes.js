@@ -1,4 +1,5 @@
 import express from "express";
+import adminMiddleware from "../middleware/adminMiddleware.js";
 
 import {
   createWaterLevel,
@@ -11,8 +12,9 @@ import {
 } from "../controllers/waterLevelController.js";
 
 const router = express.Router();
+const { requireDrrmo } = adminMiddleware;
 
-router.post("/", createWaterLevel);
+router.post("/", requireDrrmo, createWaterLevel);
 
 router.get("/", getWaterLevels);
 router.get("/latest/:camera_id", getLatestWaterLevel);
@@ -25,6 +27,7 @@ router.get(
 
 router.delete(
   "/history/daily/:id",
+  requireDrrmo,
   deleteDailyWaterLevelHistory
 );
 

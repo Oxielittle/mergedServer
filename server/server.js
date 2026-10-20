@@ -51,6 +51,7 @@ const {
   applySocketIdentity,
   canJoinUserRoom,
   canBroadcastLocation,
+  validateLocationBroadcast,
 } = require("./utils/socketRoomAccess");
 const guidelineRoutes = require("./routes/GuidelineRoutes");
 const announcementRoutes = require("./routes/AnnouncementRoutes");
@@ -599,9 +600,14 @@ io.on("connection", (socket) => {
       return;
     }
 
-    console.log("[socket] Received location:", data);
+    const location = validateLocationBroadcast(socket, data);
+    if (!location.ok) {
+      socket.emit("locationError", { message: location.message });
+      return;
+    }
 
-    socket.broadcast.emit("receive-location", data);
+    console.log("[socket] Received location from:", location.payload.userId);
+    socket.broadcast.emit("receive-location", location.payload);
   });
 
   socket.on("disconnect", () => {
