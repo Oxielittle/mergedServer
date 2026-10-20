@@ -108,6 +108,27 @@ test("admin bootstrap, YOLO control, and YOLO agent routes have dedicated guards
   assert.ok(findRoute(yoloRoutes, "post", "/agent-report").handlers.includes(requireYoloAgentToken));
 });
 
+test("incident approval and deletion require an incident operator", () => {
+  const requireIncidentOperator = function requireIncidentOperator() {};
+  const controller = new Proxy({}, { get: () => function controller() {} });
+  const routes = loadRoute("./incidentRoutes", {
+    "../controllers/incidentController": controller,
+    "../middleware/upload": { uploadIncidentImage: { fields: () => (_req, _res, next) => next() } },
+    "../middleware/adminMiddleware": { requireIncidentOperator },
+  });
+
+  for (const [method, path] of [
+    ["put", "/updateStatus/:id"],
+    ["put", "/aiStatus/:id"],
+    ["put", "/updateVerification/:id"],
+    ["put", "/forceApprove/:id"],
+    ["put", "/reverify/:id"],
+    ["delete", "/delete/:id"],
+  ]) {
+    assert.ok(findRoute(routes, method, path).handlers.includes(requireIncidentOperator));
+  }
+});
+
 function createResponse() {
   return {
     statusCode: 200,

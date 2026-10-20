@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const incidentController = require("../controllers/incidentController");
 const { uploadIncidentImage } = require("../middleware/upload");
+const { requireIncidentOperator } = require("../middleware/adminMiddleware");
 
 // ✅ Get all incidents
 router.get("/getIncidents", incidentController.getIncidents);
@@ -13,12 +14,6 @@ router.get("/trend", incidentController.getTrend);
 
 // ✅ Export single incident PDF
 router.get("/export-pdf/:id", incidentController.exportIncidentPdf);
-
-// ✅ Admin verification override
-router.put("/updateVerification/:id", incidentController.updateVerification);
-
-// ✅ Re-run AI verification
-router.put("/reverify/:id", incidentController.reverifyIncident);
 
 // ✅ Register incident (single image) + prevent undefined body
 router.post(
@@ -59,13 +54,13 @@ router.post(
 );
 
 // ✅ Update status
-router.put("/updateStatus/:id", incidentController.updateStatus);
-router.put("/aiStatus/:id", incidentController.updateAIStatus);
-router.put("/updateVerification/:id", incidentController.updateVerification);
-router.put("/forceApprove/:id", incidentController.forceApproveIncident);
-router.put("/reverify/:id", incidentController.reverifyIncident);
+router.put("/updateStatus/:id", requireIncidentOperator, incidentController.updateStatus);
+router.put("/aiStatus/:id", requireIncidentOperator, incidentController.updateAIStatus);
+router.put("/updateVerification/:id", requireIncidentOperator, incidentController.updateVerification);
+router.put("/forceApprove/:id", requireIncidentOperator, incidentController.forceApproveIncident);
+router.put("/reverify/:id", requireIncidentOperator, incidentController.reverifyIncident);
 
 // ✅ Delete incident
-router.delete("/delete/:id", incidentController.deleteIncident);
+router.delete("/delete/:id", requireIncidentOperator, incidentController.deleteIncident);
 
 module.exports = router;

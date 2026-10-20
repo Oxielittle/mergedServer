@@ -33,9 +33,17 @@ const requireAdminOrDrrmo = (req, res, next) => {
   next();
 };
 
+const requireIncidentOperator = (req, res, next) => {
+  if (!req.session || !["admin", "drrmo"].includes(req.session.role)) {
+    return res.status(403).json({ message: "Admin or DRRMO access required" });
+  }
+  next();
+};
+
 module.exports = {
   requireLogin,
   requireAdmin,
   requireDrrmo,
   requireAdminOrDrrmo,
+  requireIncidentOperator,
 };
