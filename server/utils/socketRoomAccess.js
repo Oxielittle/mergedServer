@@ -25,4 +25,8 @@ function canJoinUserRoom(socket, requestedUserId) {
   return Boolean(authenticatedUserId && authenticatedUserId === String(requestedUserId || "").trim());
 }
 
-module.exports = { applySocketIdentity, canJoinUserRoom };
+function canBroadcastLocation(socket) {
+  return Boolean(String(socket?.data?.authUserId || "").trim());
+}
+
+module.exports = { applySocketIdentity, canJoinUserRoom, canBroadcastLocation };

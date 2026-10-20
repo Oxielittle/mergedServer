@@ -27,26 +27,22 @@ const {
   getInventoryAccessError,
   normalizeRole,
 } = require("../utils/roleAccessUtils");
+const {
+  toNumber,
+  toBoolean,
+  parseDate,
+  startOfDay,
+  endOfDay,
+  startOfWeek,
+  startOfMonth,
+  startOfYear,
+  getExpiryMeta,
+  requiresExpirationForGoods,
+} = require("../utils/inventoryItemUtils");
 
 const VALID_TYPES = ["goods", "monetary", "appliance"];
 const VALID_SOURCE_TYPES = ["external", "government", "internal"];
 const LOW_STOCK_THRESHOLD = 20;
-const NON_EXPIRING_GOODS_CATEGORIES = new Set([
-  "clothes",
-  "clothing",
-  "shoes",
-  "shoe",
-  "footwear",
-  "blankets",
-  "blanket",
-  "mats",
-  "mat",
-  "towels",
-  "towel",
-  "bedding",
-  "mosquito nets",
-  "mosquito net",
-]);
 const VALID_APPLIANCE_CONDITIONS = ["brand_new", "used_item"];
 
 let aiCache = null;
@@ -518,109 +514,6 @@ const resolveInventoryType = (item = {}) => {
   return "goods";
 };
 
-const toNumber = (value) => {
-  if (value === undefined || value === null || value === "") return undefined;
-  const parsed = Number(value);
-  return Number.isNaN(parsed) ? undefined : parsed;
-};
-
-const toBoolean = (value) => {
-  if (value === undefined || value === null || value === "") return undefined;
-  if (typeof value === "boolean") return value;
-
-  const normalized = String(value).trim().toLowerCase();
-  if (["true", "1", "yes", "required", "requires", "require"].includes(normalized)) {
-    return true;
-  }
-
-  if (
-    ["false", "0", "no", "optional", "not_required", "does_not_require"].includes(
-      normalized
-    )
-  ) {
-    return false;
-  }
-
-  return undefined;
-};
-
-const parseDate = (value) => {
-  if (value === undefined || value === null || value === "") return undefined;
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return "INVALID_DATE";
-  }
-
-  return parsed;
-};
-
-const startOfDay = (date) => {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-};
-
-const endOfDay = (date) => {
-  const d = new Date(date);
-  d.setHours(23, 59, 59, 999);
-  return d;
-};
-
-const startOfWeek = (date) => {
-  const d = startOfDay(date);
-  const day = d.getDay();
-  const diff = day === 0 ? 6 : day - 1;
-  d.setDate(d.getDate() - diff);
-  return d;
-};
-
-const startOfMonth = (date) => {
-  const d = startOfDay(date);
-  d.setDate(1);
-  return d;
-};
-
-const startOfYear = (date) => {
-  const d = startOfDay(date);
-  d.setMonth(0, 1);
-  return d;
-};
-
-const getExpiryMeta = (expirationDate) => {
-  if (!expirationDate) {
-    return {
-      expiryStatus: "no_expiry",
-      daysUntilExpiration: null,
-    };
-  }
-
-  const today = startOfDay(new Date());
-  const expiry = startOfDay(expirationDate);
-
-  const diffMs = expiry.getTime() - today.getTime();
-  const daysUntilExpiration = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-  if (daysUntilExpiration < 0) {
-    return {
-      expiryStatus: "expired",
-      daysUntilExpiration,
-    };
-  }
-
-  if (daysUntilExpiration <= 30) {
-    return {
-      expiryStatus: "expiring_soon",
-      daysUntilExpiration,
-    };
-  }
-
-  return {
-    expiryStatus: "ok",
-    daysUntilExpiration,
-  };
-};
-
 const attachExpiryMeta = (item) => {
   const plain = item.toObject ? item.toObject() : { ...item };
   plain.type = resolveInventoryType(plain);
@@ -686,17 +579,6 @@ const getReleasedInventoryItemIdSet = async (itemIds = []) => {
   }
 
   return lockedIds;
-};
-
-const requiresExpirationForGoods = (category, explicitRule) => {
-  const normalizedCategory = normalizeString(category).toLowerCase();
-
-  if (explicitRule !== undefined) {
-    return Boolean(explicitRule);
-  }
-
-  if (!normalizedCategory) return false;
-  return !NON_EXPIRING_GOODS_CATEGORIES.has(normalizedCategory);
 };
 
 const isLowStockItem = (item) => {

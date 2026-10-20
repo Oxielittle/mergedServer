@@ -47,7 +47,11 @@ const reliefTrackingRoutes = require("./routes/reliefTrackingRoutes");
 const auditRoutes = require("./routes/auditRoutes");
 const { exportAuditLogsPdf } = require("./controllers/auditController");
 const { requireLogin, requireAdmin } = require("./middleware/adminMiddleware");
-const { applySocketIdentity, canJoinUserRoom } = require("./utils/socketRoomAccess");
+const {
+  applySocketIdentity,
+  canJoinUserRoom,
+  canBroadcastLocation,
+} = require("./utils/socketRoomAccess");
 const guidelineRoutes = require("./routes/GuidelineRoutes");
 const announcementRoutes = require("./routes/AnnouncementRoutes");
 const connectionRoutes = require("./routes/connectionRoutes");
@@ -588,6 +592,13 @@ io.on("connection", (socket) => {
   });
 
   socket.on("send-location", (data) => {
+    if (!canBroadcastLocation(socket)) {
+      socket.emit("locationError", {
+        message: "Sign in before sharing a safety location.",
+      });
+      return;
+    }
+
     console.log("[socket] Received location:", data);
 
     socket.broadcast.emit("receive-location", data);
